@@ -17,6 +17,7 @@ export default function HomeScreen() {
   const [editingText, setEditingText] = useState("");
   const [filter, setFilter] = useState<"all" | "completed" | "pending">("all");
   const remainingTasks = tasks.filter((task) => !task.done).length;
+  const [searchQuery, setSearchQuery] = useState("");
   const addTask = () => {
     setTasks([...tasks, {id:Date.now(), text, done:false}]);
     setText("");
@@ -70,9 +71,12 @@ export default function HomeScreen() {
   }, [tasks]);
 
   const filteredTasks = tasks.filter((task) => {
-    if (filter === "pending") return !task.done;
-    if (filter === "completed") return task.done;
-    return true; // for "all"
+    const matchesStatus =
+    filter === "pending" ? !task.done :
+    filter === "completed" ? task.done:
+    true; // for "all"
+    const matchesSearch = task.text.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
   });
 
   if (!fontsLoaded) {
@@ -92,17 +96,19 @@ export default function HomeScreen() {
         value={text}
         onChangeText={setText}
         style={styles.input}
-        onSubmitEditing={addTask}
+        onSubmitEditing={addTask}/>
+
+        <TextInput style={styles.input}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search tasks..."
         />
 
         {/* buttons */}
-      <Pressable  onPress={() => {
-        setTasks([...tasks, {id:Date.now(), text, done: false }]);
-        setText("");
-      }}>
-        <View style={styles.button}>
-          <Text style={styles.ButtonText}>Add Text</Text>
-        </View>
+      <Pressable  onPress={addTask}>
+      <View style={styles.button}>
+        <Text style={styles.ButtonText}>Add Text</Text>
+      </View>
       </Pressable>
       <Pressable onPress={() => {setFilter("all")}}>
         <Text style={styles.filterButtonText}>All</Text>
@@ -113,7 +119,13 @@ export default function HomeScreen() {
       <Pressable onPress={() => {setFilter("completed")}}>
         <Text style={styles.filterButtonText}>Completed</Text>
       </Pressable>
-      {filteredTasks.map((task, index) => (
+      {filteredTasks.length === 0 && (
+        <Text style={{color: '#f0e1e1', fontWeight: 'bold', marginTop: 20}}>
+          No matching tasks found.
+        </Text>
+      )}
+      {
+      filteredTasks.map((task, index) => (
         <View
           key={task.id}
           style={[
